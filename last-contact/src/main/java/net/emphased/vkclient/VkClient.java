@@ -1,6 +1,22 @@
-/**
+/* Copyright (c) 2010 Dmitry Lisay <pingw33n@gmail.com>
  *
- */
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE. */
 package net.emphased.vkclient;
 
 import java.io.IOException;
@@ -70,6 +86,16 @@ public class VkClient
         return _httpClient;
     }
 
+    public VkApiThrottler getThrottler()
+    {
+        return _throttler;
+    }
+
+    public void setThrottler(VkApiThrottler throttler)
+    {
+        _throttler = throttler;
+    }
+
     public boolean isLoggedIn(String email)
     {
         CookieStore cookieStore = getCookieStore(email);
@@ -77,6 +103,13 @@ public class VkClient
             CookieUtils.findCookie(cookieStore, SESSION_COOKIE) != null;
     }
 
+    /**
+     * Login to Vk site.
+     * @param email email for login.
+     * @param password password for login.
+     * @return API instance.
+     * @throws VkException if login failed.
+     */
     public VkApi login(String email, String password)
                     throws IOException, VkException
     {
@@ -109,9 +142,14 @@ public class VkClient
         sessionInfoCookie.setExpiryDate(sessionCookie.getExpiryDate());
         cookieStore.addCookie(sessionInfoCookie);
 
-        return new VkApi(this, httpContext, loginResult);
+        return createApi(httpContext, loginResult);
     }
 
+    /**
+     * Try to login using cookies.
+     * @param email email to use for login.
+     * @return API instance if successful, <code>null</code> if cookies missing or expired.
+     */
     public VkApi login(String email) throws IOException, VkException
     {
         CookieStore cookieStore = getCookieStore(email);
@@ -130,28 +168,38 @@ public class VkClient
             return null;
         }
 
-        return new VkApi(this, httpContext, loginResult);
+        return createApi(httpContext, loginResult);
     }
 
-    private CookieStore getCookieStore(String email)
+    protected VkApi createApi(HttpContext httpContext, VkLoginResult loginResult)
+    {
+        if (_throttler != null) {
+            return new VkThrottledApi(this, httpContext, loginResult, _throttler);
+        } else {
+            return new VkApi(this, httpContext, loginResult);
+        }
+    }
+
+    protected CookieStore getCookieStore(String email)
     {
         CookieStore result = _cookieStoreFactory.getCookieStore(email);
         clearExpiredCookies(result);
         return result;
     }
 
-    private HttpContext getHttpContext(CookieStore cookieStore)
+    protected HttpContext getHttpContext(CookieStore cookieStore)
     {
         HttpContext result = _httpContextFactory.create();
         result.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
         return result;
     }
 
-    private void clearExpiredCookies(CookieStore cookieStore)
+    protected void clearExpiredCookies(CookieStore cookieStore)
     {
         cookieStore.clearExpired(new Date());
     }
 
     private static ObjectMapper _objectMapper = new ObjectMapper();
     private final HttpClient _httpClient;
+    private VkApiThrottler _throttler;
 }

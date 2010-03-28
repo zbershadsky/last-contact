@@ -20,26 +20,10 @@
 package net.emphased.vkclient;
 
 /**
- * Holds information about Vkontakte App.
+ * Manages API request throttling.
  */
-public class VkAppInfo
+public interface VkApiThrottler
 {
-    public VkAppInfo(String apiId, String secret)
-    {
-        _apiId = apiId;
-        _secret = secret;
-    }
-
-    public String getApiId()
-    {
-        return _apiId;
-    }
-
-    public String getSecret()
-    {
-        return _secret;
-    }
-
-    private final String _apiId;
-    private final String _secret;
+    long throttle(VkApi api, VkAppInfo appInfo);
+    void throttleWait(VkApi api, VkAppInfo appInfo) throws InterruptedException;
 }

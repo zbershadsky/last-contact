@@ -19,27 +19,37 @@
  * THE SOFTWARE. */
 package net.emphased.vkclient;
 
+import java.io.IOException;
+import java.util.List;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.protocol.HttpContext;
+
 /**
- * Holds information about Vkontakte App.
+ *
  */
-public class VkAppInfo
+public class VkThrottledApi extends VkApi
 {
-    public VkAppInfo(String apiId, String secret)
+    VkThrottledApi(VkClient client,
+            HttpContext httpContext,
+            VkLoginResult loginResult,
+            VkApiThrottler throttler)
     {
-        _apiId = apiId;
-        _secret = secret;
+        super(client, httpContext, loginResult);
+        _throttler = throttler;
     }
 
-    public String getApiId()
+    @Override
+    public <T> T makeApiRequest(VkAppInfo appInfo, String method, List<NameValuePair> params,
+            Class<T> responseClass, ContentFilter contentFilter) throws IOException, VkException
     {
-        return _apiId;
+        try {
+            _throttler.throttleWait(this, appInfo);
+        } catch (InterruptedException e) {
+            throw new IOException(e);
+        }
+        return super.makeApiRequest(appInfo, method, params, responseClass, contentFilter);
     }
 
-    public String getSecret()
-    {
-        return _secret;
-    }
-
-    private final String _apiId;
-    private final String _secret;
+    private final VkApiThrottler _throttler;
 }

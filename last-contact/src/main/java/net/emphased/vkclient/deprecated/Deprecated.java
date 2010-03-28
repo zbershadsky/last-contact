@@ -17,29 +17,40 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE. */
-package net.emphased.vkclient;
+package net.emphased.vkclient.deprecated;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import net.emphased.vkclient.VkApi;
+import net.emphased.vkclient.VkApiResponse;
+import net.emphased.vkclient.VkAppInfo;
+import net.emphased.vkclient.VkException;
+import net.emphased.vkclient.VkSubApi;
+
+import org.apache.http.NameValuePair;
+import org.codehaus.jackson.annotate.JsonCreator;
+import org.codehaus.jackson.annotate.JsonProperty;
 
 /**
- * Holds information about Vkontakte App.
+ * Deprecated sub-API
  */
-public class VkAppInfo
+public class Deprecated extends VkSubApi
 {
-    public VkAppInfo(String apiId, String secret)
+    public Deprecated(VkApi api)
     {
-        _apiId = apiId;
-        _secret = secret;
+        super(api, null);
     }
 
-    public String getApiId()
+    /**
+     * <a href="http://vkontakte.ru/pages.php?o=-1&p=getUserInfoEx">getUserInfoEx</a> API method.
+     */
+    public UserInfoExResult getUserInfoEx(VkAppInfo appInfo)
+                throws IOException, VkException
     {
-        return _apiId;
+        List<NameValuePair> params = new ArrayList<NameValuePair>();
+        return _api.makeApiRequest(appInfo, "getUserInfoEx", params, UserInfoExResult.class);
     }
 
-    public String getSecret()
-    {
-        return _secret;
-    }
-
-    private final String _apiId;
-    private final String _secret;
 }
