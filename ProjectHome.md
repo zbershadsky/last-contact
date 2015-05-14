@@ -1,0 +1,1 @@
+Music player, streaming server integrating Vk.com and Last.fm features.
